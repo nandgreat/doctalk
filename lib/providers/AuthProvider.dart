@@ -27,7 +27,7 @@ class AuthProvider extends ChangeNotifier {
     print("my map is: $_map");
 
     final response =
-        await makePostRequest(path: 'login', map: _map, header: null);
+        await makeLoginRequest(path: 'login', map: _map, header: null);
     print(response.toString());
 
     LoginResponse responseJson = LoginResponse.fromJson(json.decode(response));

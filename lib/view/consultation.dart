@@ -1,9 +1,16 @@
+import 'package:doctalk/models/Spec.dart';
+import 'package:doctalk/providers/DoctorSpecialtyProvider.dart';
 import 'package:doctalk/utils/colors.dart';
+import 'package:doctalk/utils/commons.dart';
 import 'package:doctalk/utils/strings.dart';
+import 'package:doctalk/view/error_fetch.dart';
 import 'package:doctalk/view/single_doctor_type.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:doctalk/models/all_special_response.dart';
+import 'package:provider/provider.dart';
+
 
 class Consultation extends StatefulWidget {
   @override
@@ -11,6 +18,13 @@ class Consultation extends StatefulWidget {
 }
 
 class _ConsultationState extends State<Consultation> {
+
+  bool isLoading = false;
+
+  AllSpecialResponse specialtyResponse;
+  List<Spec> specList;
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,28 +100,45 @@ class _ConsultationState extends State<Consultation> {
                                 ),
                               ),
                               SizedBox(height: 20.0),
-                              GridView.count(
-                                crossAxisCount: 2,
-                                primary: false,
-                                childAspectRatio: 16 / 8,
-                                crossAxisSpacing: 2.0,
-                                shrinkWrap: true,
-                                children: <Widget>[
-                                  dashBoardItem('health_funding.png',
-                                      'General Doctor', 1),
-                                  dashBoardItem('doctor.png', 'Skin & Hair', 2),
-                                  dashBoardItem(
-                                      'health_forum.png', 'Child Care', 3),
-                                  dashBoardItem(
-                                      'buy_drugs.png', 'Women\'s Health', 4),
-                                  dashBoardItem(
-                                      'online_training.png', 'Dentist', 5),
-                                  dashBoardItem(
-                                      'buy_drugs.png', 'Women\'s Health', 4),
-                                  dashBoardItem(
-                                      'online_training.png', 'Dentist', 5),
-                                  dashBoardItem('blog.png', 'ENT', 6),
-                                ],
+                              Container(
+                                child: FutureBuilder<AllSpecialResponse>(
+                                  future: Provider.of<DoctorSpecialtyProvider>(context, listen: false).fetchDoctorSpecialty(),
+                                  builder: (context, snapshot) {
+                                    switch (snapshot.connectionState) {
+                                      case ConnectionState.none:
+                                        return Text(
+                                          'Fetch Doctor Specialty',
+                                          textAlign: TextAlign.center,
+                                        );
+                                      case ConnectionState.active:
+                                        return Text('');
+                                      case ConnectionState.waiting:
+                                        return Commons.otpLoading("Loading Doctor Specialties");
+                                      case ConnectionState.done:
+                                        if (snapshot.hasError) {
+                                          return Error(
+                                            errorMessage: "Error getting Doctor Specialty.",
+                                          );
+                                        } else {
+                                          specialtyResponse = snapshot.data;
+                                          print(snapshot.data);
+                                          specList = specialtyResponse.spec;
+                                          return GridView.count(
+                                            crossAxisCount: 2,
+                                            shrinkWrap: true,
+                                            childAspectRatio: 16 / 8,
+                                            crossAxisSpacing: 2.0,
+                                            children: specList.map((value) {
+                                              return Container(
+                                                child: dashBoardItem(value.name, specList.indexOf(value, 0)),
+                                              );
+                                            }).toList(),
+                                          );
+                                        }
+                                    }
+                                    return Commons.chuckyLoading("Getting Chucky Joke...");
+                                  },
+                                ),
                               )
                             ],
                           ),
@@ -143,9 +174,12 @@ class _ConsultationState extends State<Consultation> {
     );
   }
 
-  Widget dashBoardItem(String image, String name, int cardIndex) {
+
+  Widget dashBoardItem(String name, int cardIndex) {
     return InkWell(
       onTap: () {
+
+        print("our index is $cardIndex");
         Navigator.of(context).push(MaterialPageRoute(
             builder: (context) => SingleDoctorType(title: name)));
       },

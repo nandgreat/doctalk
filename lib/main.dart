@@ -1,4 +1,6 @@
 import 'package:doctalk/providers/AuthProvider.dart';
+import 'package:doctalk/providers/BookingsProvider.dart';
+import 'package:doctalk/providers/DoctorSpecialtyProvider.dart';
 import 'package:doctalk/view/dashboard.dart';
 import 'package:doctalk/view/home_page.dart';
 import 'package:doctalk/view/otp_verification_screen.dart';
@@ -37,6 +39,8 @@ class _MyAppState extends State<MyApp> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => AuthProvider()),
+        ChangeNotifierProvider(create: (context) => DoctorSpecialtyProvider()),
+        ChangeNotifierProvider(create: (context) => BookingsProvider()),
       ],
       child: MaterialApp(
         theme: buildTheme(),

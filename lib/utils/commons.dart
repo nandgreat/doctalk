@@ -11,7 +11,8 @@ import 'package:http/http.dart' as http;
 
 class Commons {
   static const baseURL = "https://api.chucknorris.io/";
-  static const apiBaseURL = "http://161.35.90.86/api/";
+  static const apiBaseURL = "https://dev.doctalkng.com/api/";
+  static const imageBaseURL = "https://dev.doctalkng.com/userfiles/";
   static const timeOut = 20;
   SharedPreferencesHelper preferencesHelper = new SharedPreferencesHelper();
 

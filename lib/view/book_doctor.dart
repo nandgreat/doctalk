@@ -1,30 +1,53 @@
+import 'package:doctalk/models/booking.dart';
 import 'package:doctalk/models/doctors.dart';
+import 'package:doctalk/providers/BookingsProvider.dart';
 import 'package:doctalk/utils/colors.dart';
 import 'package:doctalk/utils/commons.dart';
-import 'package:doctalk/view/book_doctor.dart';
+import 'package:doctalk/utils/custom_loader_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
+import 'package:doctalk/models/bookings_response.dart';
+import 'package:doctalk/view/error_fetch.dart';
 
-import 'expansionPanel.dart';
-
-class DoctorProfile extends StatefulWidget {
-  final Doctors doctor;
-
-  DoctorProfile({this.doctor});
-
-  @override
-  _DoctorProfileState createState() => _DoctorProfileState();
+extension StringExtension on String {
+  String capitalizer() {
+    return "${this[0].toUpperCase()}${this.substring(1)}";
+  }
 }
 
-class _DoctorProfileState extends State<DoctorProfile>
+class BookDoctor extends StatefulWidget {
+  final Doctors doctor;
+
+  BookDoctor({this.doctor});
+
+  @override
+  _BookDoctorState createState() => _BookDoctorState();
+}
+
+class _BookDoctorState extends State<BookDoctor>
     with SingleTickerProviderStateMixin {
-  TabController _tabController;
+  BookingsResponse _bookingsResponse;
+  List<Booking> bookingsList;
+  bool isButtonSelected = false;
+  List<String> selectedChoices = List();
+  List<String> weeksDays = [
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday"
+  ];
+  CustomLoader _loader;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    selectedChoices.clear();
+    isButtonSelected = false;
+    _loader = CustomLoader(context);
+
   }
 
   @override
@@ -102,48 +125,14 @@ class _DoctorProfileState extends State<DoctorProfile>
           Container(
             width: MediaQuery.of(context).size.width,
             child: Padding(
-              padding: const EdgeInsets.only(left: 16.0),
-              child: TabBar(
-                controller: _tabController,
-                indicatorColor: Colors.transparent,
-                labelColor: MyColors.primaryColor,
-                isScrollable: false,
-                labelPadding: EdgeInsets.only(right: 10.0),
-                unselectedLabelColor: Color(0xFFCDCDCD),
-                unselectedLabelStyle: TextStyle(
-                  color: Color(0xFFCDCDCD),
-                ),
-                tabs: [
-                  Tab(
-                    child: Text(
-                      "Doctor's Info",
-                      style: TextStyle(
-                        fontFamily: 'Varela',
-                        fontSize: 19.0,
-                      ),
+                padding: const EdgeInsets.only(left: 16.0),
+                child: SingleChildScrollView(
+                  child: Column(children: [
+                    SizedBox(
+                      height: 12.0,
                     ),
-                  ),
-                  Tab(
-                    child: Text(
-                      'Clinic Info',
-                      style: TextStyle(
-                        fontFamily: 'Varela',
-                        fontSize: 19.0,
-                      ),
-                    ),
-                  ),
-                  Tab(
-                    child: Text(
-                      'Feedback',
-                      style: TextStyle(
-                        fontFamily: 'Varela',
-                        fontSize: 19.0,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                  ]),
+                )),
           ),
           Container(
             height: MediaQuery.of(context).size.height * 38 / 100,
@@ -151,17 +140,44 @@ class _DoctorProfileState extends State<DoctorProfile>
               padding: EdgeInsets.only(left: 16.0),
               children: <Widget>[
                 Container(
-                  height: MediaQuery.of(context).size.height - 50,
-                  width: double.infinity,
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: <Widget>[
-                      ClinicInfoWidget(doctors: widget.doctor),
-                      ClinicInfoWidget(doctors: widget.doctor),
-                      FeedBackWidget()
-                    ],
+                  child: FutureBuilder<BookingsResponse>(
+                    future:
+                        Provider.of<BookingsProvider>(context, listen: false)
+                            .getAvailableBookings("1"),
+                    builder: (context, snapshot) {
+                      switch (snapshot.connectionState) {
+                        case ConnectionState.none:
+                          return Text(
+                            'Fetch Doctor Appointments',
+                            textAlign: TextAlign.center,
+                          );
+                        case ConnectionState.active:
+                          return Text('');
+                        case ConnectionState.waiting:
+                          return Commons.otpLoading(
+                              "Loading Appointments for Dr. ${widget.doctor.firstname}");
+                        case ConnectionState.done:
+                          if (snapshot.hasError) {
+                            print(snapshot.error.toString());
+                            return Error(
+                              errorMessage: "Error getting Doctor Specialty.",
+                            );
+                          } else {
+                            this._bookingsResponse = snapshot.data;
+                            print(snapshot.data);
+                            bookingsList = _bookingsResponse.booking;
+
+                            print(selectedChoices.length > 0
+                                ? selectedChoices[0]
+                                : "nothing selected");
+
+                            return Appointments(weeksDays, bookingsList, this);
+                          }
+                      }
+                      return Commons.chuckyLoading("Getting Appointments...");
+                    },
                   ),
-                )
+                ),
               ],
             ),
           ),
@@ -176,16 +192,22 @@ class _DoctorProfileState extends State<DoctorProfile>
               children: [
                 InkWell(
                   onTap: () {
-                    print("So you want to book Dr. ${widget.doctor.firstname}");
-                    Navigator.of(context)
-                        .push(MaterialPageRoute(builder: (context) => BookDoctor(doctor: widget.doctor)));
+                    if (isButtonSelected) {
+                      _loader.showLoader();
+                      // final newUser = Provider.of<BookingsProvider>(context, listen: false)
+                      //     .setBooking("lskjdflksjdfs", );
 
+                      print(
+                          "So you want to book Dr. ${widget.doctor.firstname}");
+                    }
                   },
                   child: Container(
                     width: MediaQuery.of(context).size.width - 50.0,
                     height: 45.0,
                     decoration: BoxDecoration(
-                        color: MyColors.primaryColor,
+                        color: isButtonSelected
+                            ? MyColors.primaryColor
+                            : Colors.grey,
                         borderRadius: BorderRadius.circular(25.0)),
                     child: Center(
                         child: Text(
@@ -258,8 +280,8 @@ class _DoctorProfileState extends State<DoctorProfile>
                                 borderRadius: BorderRadius.circular(60),
                                 color: Colors.transparent),
                             child: CircleAvatar(
-                              backgroundImage:
-                              NetworkImage("${Commons.imageBaseURL}${widget.doctor.photo}"),
+                              backgroundImage: NetworkImage(
+                                  "${Commons.imageBaseURL}${widget.doctor.photo}"),
                               radius: 100.0,
                             ),
                           )
@@ -295,16 +317,11 @@ class _DoctorProfileState extends State<DoctorProfile>
 }
 
 class ClinicInfoWidget extends StatelessWidget {
-
-  final Doctors doctors;
-
-  ClinicInfoWidget({this.doctors});
-
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        clinicInfoItems(Icons.phone, doctors.phone),
+        clinicInfoItems(Icons.phone, "+2348160161241"),
         Divider(
           color: Colors.grey,
           height: 5,
@@ -413,5 +430,81 @@ class FeedBackWidget extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class Appointments extends StatefulWidget {
+  List<Booking> bookingsList;
+  List<String> weekdays;
+  _BookDoctorState parent;
+
+  Appointments(this.weekdays, this.bookingsList, this.parent);
+
+  @override
+  _AppointmentsState createState() => _AppointmentsState();
+}
+
+class _AppointmentsState extends State<Appointments> {
+  List<String> selectionChoice;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: widget.weekdays
+          .map((weekday) => WeekAppointmentsView(
+              weekday: weekday,
+              bookingsList: widget.bookingsList,
+              parent: this.widget.parent))
+          .toList(),
+    );
+  }
+}
+
+class WeekAppointmentsView extends StatefulWidget {
+  List<Booking> bookingsList;
+  String weekday;
+  _BookDoctorState parent;
+
+  WeekAppointmentsView({Key key, this.bookingsList, this.weekday, this.parent});
+
+  @override
+  _WeekAppointmentsViewState createState() => _WeekAppointmentsViewState();
+}
+
+class _WeekAppointmentsViewState extends State<WeekAppointmentsView> {
+  @override
+  Widget build(BuildContext context) {
+    print("our current weekday is ${widget.weekday}");
+
+    return Column(children: [
+      Text(
+        widget.weekday.capitalizer(),
+        style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+      ),
+      Wrap(
+        children: widget.bookingsList
+            .where((element) => element.day == widget.weekday.toLowerCase())
+            .map((booking) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 5.0),
+              child: ChoiceChip(
+                    selected:
+                        this.widget.parent.selectedChoices.contains(booking.id),
+                    label: Text("${booking.start} - ${booking.end}"),
+                    onSelected: (bool selected) {
+                      this.widget.parent.setState(() {
+                        this.widget.parent.isButtonSelected = true;
+                        this.widget.parent.selectedChoices.clear();
+                        this.widget.parent.selectedChoices.add(booking.id);
+                        print(this.widget.parent.selectedChoices);
+                      });
+                    },
+                  ),
+            ))
+            .toList(),
+      ),
+      SizedBox(
+        height: 20.0,
+      )
+    ]);
   }
 }

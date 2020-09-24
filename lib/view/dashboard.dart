@@ -1,7 +1,10 @@
 import 'package:doctalk/utils/colors.dart';
 import 'package:doctalk/utils/commons.dart';
+import 'package:doctalk/view/buy_drugs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import 'consultation.dart';
 
 class Dashboard extends StatefulWidget {
   @override
@@ -235,8 +238,11 @@ class _DashboardState extends State<Dashboard> {
       onTap: () {
         if (cardIndex == 2) {
           print(name);
-          // Navigator.of(context)
-          //     .push(MaterialPageRoute(builder: (context) => Consultation()));
+          Navigator.of(context)
+              .push(MaterialPageRoute(builder: (context) => Consultation()));
+        } else if (cardIndex == 4) {
+          Navigator.of(context)
+              .push(MaterialPageRoute(builder: (context) => BuyDrugs()));
         }
       },
       child: Card(

@@ -1,32 +1,37 @@
 import 'package:doctalk/models/doctors.dart';
-import 'package:doctalk/models/specialty_doctors_response.dart';
-import 'package:doctalk/providers/DoctorSpecialtyProvider.dart';
 import 'package:doctalk/utils/colors.dart';
-import 'package:doctalk/utils/commons.dart';
 import 'package:doctalk/view/doctor_profile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:provider/provider.dart';
-import 'package:doctalk/view/error_fetch.dart';
 
-class SingleDoctorType extends StatefulWidget {
+class BuyDrugs extends StatefulWidget {
   final String title;
 
-  SingleDoctorType({this.title});
+  BuyDrugs({this.title});
 
   @override
-  _SingleDoctorTypeState createState() => _SingleDoctorTypeState();
+  _BuyDrugsState createState() => _BuyDrugsState();
 }
 
-class _SingleDoctorTypeState extends State<SingleDoctorType> {
-  SpecialtyDoctorsResponse doctorsResponse;
-  List<Doctors> doctorsList;
+class _BuyDrugsState extends State<BuyDrugs> {
+  List<Doctors> doctors = [
+    Doctors(
+        firstname: "Prince",
+        lastname: "David",
+        specialty: "General Physician",
+        photo: "prince.png",
+        about: "MD - General Medicin, Abuja Teaching Hospital",
+        amount: 15000,
+        id: 1,
+        country: "Antartica",
+        phone: "07031676998")
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text("Online Pharmacy"),
         centerTitle: true,
         elevation: 0.0,
         backgroundColor: MyColors.primaryColor,
@@ -79,52 +84,13 @@ class _SingleDoctorTypeState extends State<SingleDoctorType> {
                             color: Colors.grey[500]),
                       ),
                     ),
-                    FutureBuilder<SpecialtyDoctorsResponse>(
-                      future: Provider.of<DoctorSpecialtyProvider>(context,
-                              listen: false)
-                          .getSpecialtyDoctors(widget.title),
-                      builder: (context, snapshot) {
-                        switch (snapshot.connectionState) {
-                          case ConnectionState.none:
-                            return Text(
-                              'Fetch Doctor Specialty',
-                              textAlign: TextAlign.center,
-                            );
-                          case ConnectionState.active:
-                            return Text('');
-                          case ConnectionState.waiting:
-                            return Commons.otpLoading(
-                                "Loading All ${widget.title.toUpperCase()}");
-                          case ConnectionState.done:
-                            if (snapshot.hasError) {
-                              print(snapshot.error.toString());
-                              return Error(
-                                errorMessage: "Error getting Doctor Specialty.",
-                              );
-                            } else {
-                              doctorsResponse = snapshot.data;
-                              print(snapshot.data);
-                              doctorsList = doctorsResponse.doctors;
-
-                              return Column(
-                                children: doctorsList
-                                    .map((doctor) => DoctorCard(
-                                          doctor: doctor,
-                                        ))
-                                    .toList(),
-                              );
-                            }
-                        }
-                        return Commons.chuckyLoading("Getting Chucky Joke...");
-                      },
-                    ),
                     Column(
-                        // children: doctors
-                        //     .map((doctor) => DoctorCard(
-                        //           doctor: doctor,
-                        //         ))
-                        //     .toList(),
-                        )
+                      children: doctors
+                          .map((doctor) => DoctorCard(
+                                doctor: doctor,
+                              ))
+                          .toList(),
+                    )
                   ],
                 )
               ],
@@ -182,7 +148,7 @@ class DoctorCard extends StatelessWidget {
                           children: [
                             CircleAvatar(
                               backgroundImage:
-                                  NetworkImage("${Commons.imageBaseURL}${doctor.photo}"),
+                                  AssetImage("assets/${doctor.photo}"),
                               radius: 23.0,
                             ),
                           ],
